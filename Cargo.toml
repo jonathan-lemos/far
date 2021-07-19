@@ -1,0 +1,12 @@
+[package]
+name = "far"
+version = "0.1.0"
+authors = ["Jonathan Lemos <jonathanlemos@protonmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ascii_utils = "0.9.3"
+fancy-regex = "0.7.0"
+rayon = "1.5"
