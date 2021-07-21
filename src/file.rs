@@ -36,13 +36,13 @@ impl TempFile {
 
     pub fn filename(filename: &str, suffix: &str) -> Result<String> {
         let tmp = Self::new(filename, suffix)?;
-        Ok(tmp.filename)
+        Ok(tmp.filename.clone())
     }
 }
 
 impl Drop for TempFile {
     fn drop(&mut self) {
-        fs::remove_file(self.filename);
+        fs::remove_file(&self.filename);
     }
 }
 

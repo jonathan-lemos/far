@@ -1,33 +1,22 @@
 mod dir_iter;
+mod far;
 mod file;
+mod input;
+mod iter;
 mod replace;
 
-use fancy_regex::Regex;
-use dir_iter::{DirIterator, DirIteratorError};
-use replace::{replace_lines_in_file, ReplaceError};
+use input::{ArgsError, parse_args};
+use far::find_and_replace;
 
-use rayon::prelude::*;
-
-fn handle_diriteratorerror(die: DirIteratorError) {
-    eprintln!("{}: {}", die.path, die.err)
-}
-
-fn handle_replaceerror(path: &str, re: ReplaceError) {
-    eprintln!("{}: {}", path, re)
-}
-
-fn handle_result(result: Result<String, DirIteratorError>, pattern: &Regex, replacement: &str) {
-    let r = result.and_then(|s| {
-        replace_lines_in_file(&s, pattern, replacement)
-    };
-}
-
-fn replace_in_directory(dir: &str) {
-    DirIterator::new(dir).unwrap()
-        .par_bridge()
-        .for_each();
+fn handle_argserror(e: ArgsError) {
+    eprintln!("Failed to parse command-line arguments: {}", e)
 }
 
 fn main() {
-    println!("Hello, world!");
+    let args = match parse_args() {
+        Ok(v) => v,
+        Err(e) => return handle_argserror(e)
+    };
+
+    find_and_replace(dir: &str, pattern: &Regex, replacement: &str)
 }

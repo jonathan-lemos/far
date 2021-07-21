@@ -46,7 +46,12 @@ impl DirIterator {
     }
 
     fn next_sub(&mut self) -> Option<Result<String>> {
-        let si = self.sub_iter?;
+        let si = &mut self.sub_iter;
+        let si = match si {
+            Some(s) => s,
+            None => return None
+        };
+
         match si.next() {
             Some(s) => Some(s),
             None => {
@@ -62,7 +67,8 @@ impl DirIterator {
             Ok(di) => {
                 self.sub_iter = Some(Box::new(di));
                 self.next()
-            }
+            },
+            Err(e) => Some(Err(e))
         }
     }
 
@@ -101,7 +107,7 @@ impl DirIterator {
 impl Iterator for DirIterator {
     type Item = Result<String>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.next_sub().or_else(|| self.next_rd(&self.path))
+        self.next_sub().or_else(|| self.next_rd(&self.path.clone()))
     }
 }
 
