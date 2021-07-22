@@ -1,5 +1,6 @@
 use fancy_regex::Regex;
 use crate::dir_iter::{DirIterator, DirIteratorError};
+use crate::iter::Concat;
 use crate::replace::{replace_lines_in_file, ReplaceError};
 
 use rayon::prelude::*;
@@ -24,10 +25,25 @@ fn handle_result(result: Result<String, DirIteratorError>, pattern: &Regex, repl
     }
 }
 
-pub fn find_and_replace<'a, I: Iterator<Item=&'a str>>(dirs: I, pattern: &Regex, replacement: &str) {
-    let it = dirs.map(|a| DirIterator::new(a).unwrap()).reduce(|a, c| a.chain(c))
+pub fn diriter_vec<'a, I: Iterator<Item=&'a str>>(dirs: I) -> Result<impl Iterator<Item=Result<String, DirIteratorError>>, DirIteratorError> {
+    let mut vec = Vec::new();
 
-    DirIterator::new(dir).unwrap()
-        .par_bridge()
+    for dir in dirs {
+        match DirIterator::new(dir) {
+            Ok(di) => vec.push(di),
+            Err(e) => return Err(e)
+        }
+    };
+
+    Ok(Concat::new(vec))
+}
+
+pub fn find_and_replace<'a, I: Iterator<Item=&'a str>>(dirs: I, pattern: &Regex, replacement: &str) {
+    let iter = match diriter_vec(dirs) {
+        Ok(v) => v,
+        Err(e) => return handle_diriteratorerror(e)
+    };
+
+    iter.par_bridge()
         .for_each(|r| handle_result(r, pattern, replacement));
 }

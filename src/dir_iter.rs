@@ -45,61 +45,57 @@ impl DirIterator {
         }
     }
 
-    fn next_sub(&mut self) -> Option<Result<String>> {
-        let si = &mut self.sub_iter;
-        let si = match si {
-            Some(s) => s,
-            None => return None
-        };
-
-        match si.next() {
-            Some(s) => Some(s),
-            None => {
-                self.sub_iter = None;
-                None
-            }
-        }
+    fn next_from_sub(&mut self) -> Option<Result<String>> {
+        self.sub_iter.and_then(|i| i.next())
     }
 
-    fn next_dir(&mut self, entry: DirEntry) -> Option<Result<String>> {
+    fn replace_sub_from_direntry(&mut self, entry: DirEntry) -> Option<Result<()>> {
         let path = DirIterator::pathbuf_to_string(entry.path());
         match DirIterator::new(&path) {
             Ok(di) => {
                 self.sub_iter = Some(Box::new(di));
-                self.next()
-            },
-            Err(e) => Some(Err(e))
+                Some(Ok(()))
+            }
+            Err(e) => Some(Err(e)),
         }
     }
 
-    fn next_dir_entry(&mut self, di: DirEntry) -> Option<Result<String>> {
+    fn direntry_is_directory(di: &DirEntry) -> Result<bool> {
         let path = DirIterator::pathbuf_to_string(di.path());
-        let file_type = match di.file_type().to_result(&path) {
-            Ok(t) => t,
-            Err(e) => return Some(Err(e))
-        };
-        if file_type.is_dir() {
-            let din = match DirIterator::new(&path) {
-                Ok(d) => d,
-                Err(e) => return Some(Err(e))
-            };
-            self.sub_iter = Some(Box::new(din));
-            self.next()
-        }
-        else if file_type.is_symlink() {
-            self.next()
-        }
-        else {
-            Some(Ok(path))
+        match di.file_type().to_result(&path) {
+            Ok(file_type) => Ok(file_type.is_dir()),
+            Err(e) => Err(e),
         }
     }
 
-    fn next_rd(&mut self, path: &str) -> Option<Result<String>> {
-        let value = self.rd.next()?;
+    fn next_from_direntry(&mut self, di: DirEntry) -> Option<Result<String>> {
+        match DirIterator::direntry_is_directory(&di) {
+            Err(e) => return Some(Err(e)),
+            Ok(false) => return None,
+            Ok(true) => {}
+        };
 
-        match value.to_result(path) {
-            Ok(v) => self.next_dir_entry(v),
-            Err(e) => Some(Err(e))
+        match self.replace_sub_from_direntry(di) {
+            None => return None,
+            Some(Err(e)) => return Some(Err(e)),
+            Some(Ok(_)) => {}
+        };
+
+        self.next_from_sub()
+    }
+
+    fn next_from_rd(&mut self, path: &str) -> Option<Result<String>> {
+        loop {
+            let value = self.rd.next()?;
+
+            match value.to_result(path) {
+                Ok(di) => match self.next_from_direntry(di) {
+                    Some(Ok(r)) => return Some(Ok(r)),
+                    Some(Err(e)) => return Some(Err(e)),
+                    None => {}
+                },
+                Err(e) => return Some(Err(e)),
+            }
         }
     }
 }
@@ -107,7 +103,7 @@ impl DirIterator {
 impl Iterator for DirIterator {
     type Item = Result<String>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.next_sub().or_else(|| self.next_rd(&self.path.clone()))
+        self.next_from_rd(&self.path)
     }
 }
 
