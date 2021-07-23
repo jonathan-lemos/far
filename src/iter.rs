@@ -40,3 +40,17 @@ impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<It
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_concat() {
+        let data = vec![vec![1, 2], vec![], vec![3], vec![4, 5]];
+        let cnc = Concat::new(data);
+        let result: Vec<i32> = cnc.collect();
+
+        assert_eq!(vec![1, 2, 3, 4, 5], result);
+    }
+}

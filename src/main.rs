@@ -5,7 +5,7 @@ mod input;
 mod iter;
 mod replace;
 
-use input::{ArgsError, parse_args};
+use input::{ArgsError, FarMode, parse_args};
 use far::find_and_replace;
 
 fn handle_argserror(e: ArgsError) {
@@ -18,5 +18,5 @@ fn main() {
         Err(e) => return handle_argserror(e)
     };
 
-    find_and_replace(args.paths.iter(), &args.pattern, &args.replacement)
+    find_and_replace(args.paths, &args.pattern, &args.replacement, args.mode)
 }

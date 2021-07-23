@@ -1,7 +1,8 @@
+use crate::FarMode;
 use fancy_regex::Regex;
 use crate::dir_iter::{DirIterator, DirIteratorError};
 use crate::iter::Concat;
-use crate::replace::{replace_lines_in_file, ReplaceError};
+use crate::replace::{replace_all_in_file, replace_lines_in_file, ReplaceError};
 
 use rayon::prelude::*;
 
@@ -13,13 +14,18 @@ fn handle_replaceerror(path: &str, re: ReplaceError) {
     eprintln!("{}: {}", path, re)
 }
 
-fn handle_result(result: Result<String, DirIteratorError>, pattern: &Regex, replacement: &str) {
+fn handle_result(result: Result<String, DirIteratorError>, pattern: &Regex, replacement: &str, mode: FarMode) {
     let path = match result {
         Ok(v) => v,
         Err(e) => return handle_diriteratorerror(e)
     };
 
-    match replace_lines_in_file(&path, pattern, replacement) {
+    let f = match mode {
+        FarMode::Lines => replace_lines_in_file,
+        FarMode::All => replace_all_in_file
+    };
+
+    match f(&path, pattern, replacement) {
         Ok(_) => {},
         Err(e) => return handle_replaceerror(&path, e)
     }
@@ -38,12 +44,12 @@ pub fn diriter_vec<S: AsRef<str>, I: Iterator<Item=S>>(dirs: I) -> Result<impl I
     Ok(Concat::new(vec))
 }
 
-pub fn find_and_replace<S: AsRef<str>, I: IntoIterator<Item=S>>(dirs: I, pattern: &Regex, replacement: &str) {
+pub fn find_and_replace<S: AsRef<str>, I: IntoIterator<Item=S>>(dirs: I, pattern: &Regex, replacement: &str, mode: FarMode) {
     let iter = match diriter_vec(dirs.into_iter()) {
         Ok(v) => v,
         Err(e) => return handle_diriteratorerror(e)
     };
 
     iter.par_bridge()
-        .for_each(|r| handle_result(r, pattern, replacement));
+        .for_each(|r| handle_result(r, pattern, replacement, mode));
 }

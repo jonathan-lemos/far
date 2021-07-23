@@ -2,6 +2,12 @@ use fancy_regex::{self, Regex};
 use std::env;
 use std::fmt::Display;
 
+#[derive(Debug, Clone, Copy)]
+pub enum FarMode {
+    Lines,
+    All
+}
+
 #[derive(Debug)]
 pub enum ArgsError {
     InvalidRegex(fancy_regex::Error),
@@ -31,6 +37,7 @@ pub struct Args {
     pub pattern: Regex,
     pub replacement: String,
     pub paths: Vec<String>,
+    pub mode: FarMode
 }
 
 #[derive(Debug)]
@@ -38,6 +45,7 @@ struct IncompleteArgs {
     pattern: Option<Regex>,
     replacement: Option<String>,
     paths: Vec<String>,
+    mode: FarMode,
     process_flags: bool
 }
 
@@ -47,6 +55,7 @@ impl IncompleteArgs {
             pattern: None,
             replacement: None,
             paths: Vec::new(),
+            mode: FarMode::Lines,
             process_flags: true
         }
     }
@@ -70,6 +79,18 @@ impl IncompleteArgs {
             "--help" | "-h" => {
                 print_help();
                 std::process::exit(0)
+            },
+            "--multiline" | "-m" => {
+                self.mode = FarMode::All;
+                Ok(self)
+            },
+            "--singleline" | "-s" => {
+                self.mode = FarMode::Lines;
+                Ok(self)
+            }
+            "--" => {
+                self.process_flags = false;
+                Ok(self)
             }
             _ => Err(ArgsError::UnrecognizedArgument(arg.to_string()))
         }
@@ -97,6 +118,7 @@ impl IncompleteArgs {
                 pattern: pat,
                 replacement: repl,
                 paths: self.paths,
+                mode: self.mode
             }),
         }
     }
@@ -116,7 +138,9 @@ pub fn print_usage() {
     println!("usage: {} [flag...] pattern replacement [path...]", prog_name());
     println!();
     println!("flags:");
-    println!("  -h, --help: display the help");
+    println!("  -h, --help:       display the help");
+    println!("  -m, --multiline:  match the whole file instead of line-by-line");
+    println!("  -s, --singleline: match line-by-line. this is the default");
     println!();
 }
 

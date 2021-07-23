@@ -42,7 +42,7 @@ impl TempFile {
 
 impl Drop for TempFile {
     fn drop(&mut self) {
-        fs::remove_file(&self.filename);
+        let _ = fs::remove_file(&self.filename);
     }
 }
 
