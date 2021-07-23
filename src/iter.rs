@@ -1,9 +1,12 @@
-pub struct Concat<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>> {
+pub struct Concat<T, A, B, C>
+    where A: Iterator<Item=T>,
+          B: IntoIterator<Item=T, IntoIter=A>,
+          C: Iterator<Item=B> {
     current: Option<A>,
     iter: C,
 }
 
-impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>, > Concat<T, A, B, C> {
+impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>> Concat<T, A, B, C> {
     pub fn new<D: IntoIterator<Item=B, IntoIter=C>>(iter: D) -> Self {
         Concat {
             current: None,
@@ -33,7 +36,7 @@ impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<It
                 None => {
                     self.replace_current();
                     if self.current.is_none() {
-                        return None
+                        return None;
                     }
                 }
             }

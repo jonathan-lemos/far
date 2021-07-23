@@ -65,7 +65,7 @@ impl DirIterator {
 
     fn direntry_is_directory(di: &DirEntry) -> Result<bool> {
         let path = DirIterator::pathbuf_to_string(di.path());
-        match di.file_type().to_result(&path) {
+        match di.file_type().into_result(&path) {
             Ok(file_type) => Ok(file_type.is_dir()),
             Err(e) => Err(e),
         }
@@ -91,7 +91,7 @@ impl DirIterator {
         loop {
             let value = self.rd.next()?;
 
-            match value.to_result(path) {
+            match value.into_result(path) {
                 Ok(di) => match self.next_from_direntry(di) {
                     Some(Ok(r)) => return Some(Ok(r)),
                     Some(Err(e)) => return Some(Err(e)),
@@ -111,11 +111,11 @@ impl Iterator for DirIterator {
 }
 
 trait ToResult<T> {
-    fn to_result(self, path: &str) -> Result<T>;
+    fn into_result(self, path: &str) -> Result<T>;
 }
 
 impl<T> ToResult<T> for io::Result<T> {
-    fn to_result(self, path: &str) -> Result<T> {
+    fn into_result(self, path: &str) -> Result<T> {
         self.or_else(|e| Err(DirIteratorError::new(path, e)))
     }
 }

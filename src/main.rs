@@ -5,7 +5,7 @@ mod input;
 mod iter;
 mod replace;
 
-use input::{ArgsError, FarMode, parse_args};
+use input::{ArgsError, FarMode, parse_cmdline};
 use far::find_and_replace;
 
 fn handle_argserror(e: ArgsError) {
@@ -13,7 +13,7 @@ fn handle_argserror(e: ArgsError) {
 }
 
 fn main() {
-    let args = match parse_args() {
+    let args = match parse_cmdline() {
         Ok(v) => v,
         Err(e) => return handle_argserror(e)
     };
