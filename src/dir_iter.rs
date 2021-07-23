@@ -46,7 +46,10 @@ impl DirIterator {
     }
 
     fn next_from_sub(&mut self) -> Option<Result<String>> {
-        self.sub_iter.and_then(|i| i.next())
+        match &mut self.sub_iter {
+            None => None,
+            Some(s) => s.next()
+        }
     }
 
     fn replace_sub_from_direntry(&mut self, entry: DirEntry) -> Option<Result<()>> {
@@ -103,7 +106,7 @@ impl DirIterator {
 impl Iterator for DirIterator {
     type Item = Result<String>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.next_from_rd(&self.path)
+        self.next_from_rd(&self.path.clone())
     }
 }
 

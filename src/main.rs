@@ -18,5 +18,5 @@ fn main() {
         Err(e) => return handle_argserror(e)
     };
 
-    find_and_replace(dir: &str, pattern: &Regex, replacement: &str)
+    find_and_replace(args.paths.iter(), &args.pattern, &args.replacement)
 }

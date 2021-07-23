@@ -25,11 +25,11 @@ fn handle_result(result: Result<String, DirIteratorError>, pattern: &Regex, repl
     }
 }
 
-pub fn diriter_vec<'a, I: Iterator<Item=&'a str>>(dirs: I) -> Result<impl Iterator<Item=Result<String, DirIteratorError>>, DirIteratorError> {
+pub fn diriter_vec<S: AsRef<str>, I: Iterator<Item=S>>(dirs: I) -> Result<impl Iterator<Item=Result<String, DirIteratorError>>, DirIteratorError> {
     let mut vec = Vec::new();
 
     for dir in dirs {
-        match DirIterator::new(dir) {
+        match DirIterator::new(dir.as_ref()) {
             Ok(di) => vec.push(di),
             Err(e) => return Err(e)
         }
@@ -38,8 +38,8 @@ pub fn diriter_vec<'a, I: Iterator<Item=&'a str>>(dirs: I) -> Result<impl Iterat
     Ok(Concat::new(vec))
 }
 
-pub fn find_and_replace<'a, I: Iterator<Item=&'a str>>(dirs: I, pattern: &Regex, replacement: &str) {
-    let iter = match diriter_vec(dirs) {
+pub fn find_and_replace<S: AsRef<str>, I: IntoIterator<Item=S>>(dirs: I, pattern: &Regex, replacement: &str) {
+    let iter = match diriter_vec(dirs.into_iter()) {
         Ok(v) => v,
         Err(e) => return handle_diriteratorerror(e)
     };

@@ -1,20 +1,21 @@
-pub struct Concat<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>, D: IntoIterator<Item=B, IntoIter=C>> {
+pub struct Concat<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>> {
     current: Option<A>,
     iter: C,
-    iter_orig: D
 }
 
-impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>, D: IntoIterator<Item=B, IntoIter=C>> Concat<T, A, B, C, D> {
-    pub fn new(iter: D) -> Self {
+impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>, > Concat<T, A, B, C> {
+    pub fn new<D: IntoIterator<Item=B, IntoIter=C>>(iter: D) -> Self {
         Concat {
             current: None,
             iter: iter.into_iter(),
-            iter_orig: iter
         }
     }
 
     fn next_from_current(&mut self) -> Option<T> {
-        self.current.and_then(|c| c.next())
+        match &mut self.current {
+            None => None,
+            Some(s) => s.next()
+        }
     }
 
     fn replace_current(&mut self) {
@@ -22,7 +23,7 @@ impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<It
     }
 }
 
-impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>, D: IntoIterator<Item=B, IntoIter=C>> Iterator for Concat<T, A, B, C, D> {
+impl<T, A: Iterator<Item=T>, B: IntoIterator<Item=T, IntoIter=A>, C: Iterator<Item=B>> Iterator for Concat<T, A, B, C> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
