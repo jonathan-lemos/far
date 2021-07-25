@@ -21,7 +21,7 @@ fn write_to_file<I: Iterator<Item = io::Result<String>>>(
 }
 
 fn string_is_printable(s: &str) -> bool {
-    s.chars().all(|c| c.is_printable())
+    s.chars().all(|c| c.is_printable() || c.is_space())
 }
 
 fn file_is_printable(path: &str) -> io::Result<bool> {

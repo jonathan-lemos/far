@@ -74,7 +74,7 @@ impl DirIterator {
     fn next_from_direntry(&mut self, di: DirEntry) -> Option<Result<String>> {
         match DirIterator::direntry_is_directory(&di) {
             Err(e) => return Some(Err(e)),
-            Ok(false) => return None,
+            Ok(false) => return Some(Ok(DirIterator::pathbuf_to_string(di.path()))),
             Ok(true) => {}
         };
 
