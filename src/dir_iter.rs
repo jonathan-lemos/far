@@ -9,7 +9,7 @@ pub struct DirIteratorError {
 }
 
 impl DirIteratorError {
-    pub fn new(path: &str, err: io::Error) -> Self {
+    pub fn new<T: ToString>(path: T, err: io::Error) -> Self {
         DirIteratorError {
             path: path.to_string(),
             err: err,
@@ -72,6 +72,8 @@ impl DirIterator {
     }
 
     fn next_from_direntry(&mut self, di: DirEntry) -> Option<Result<String>> {
+        let _s = di.path().to_str().unwrap().to_string();
+
         match DirIterator::direntry_is_directory(&di) {
             Err(e) => return Some(Err(e)),
             Ok(false) => return Some(Ok(DirIterator::pathbuf_to_string(di.path()))),
@@ -106,7 +108,9 @@ impl DirIterator {
 impl Iterator for DirIterator {
     type Item = Result<String>;
     fn next(&mut self) -> Option<Self::Item> {
-        self.next_from_rd(&self.path.clone())
+        self.next_from_sub().or_else(|| {
+            self.next_from_rd(&self.path.clone())
+        })
     }
 }
 
@@ -117,5 +121,93 @@ trait ToResult<T> {
 impl<T> ToResult<T> for io::Result<T> {
     fn into_result(self, path: &str) -> Result<T> {
         self.or_else(|e| Err(DirIteratorError::new(path, e)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testdir::testdir::TestDir;
+
+    fn test_dirs(temp: &mut TestDir, expected: Vec<&str>) {
+        let mut expected: Vec<String> = expected
+            .into_iter()
+            .map(|x| {
+                let mut pb = temp.path().to_owned();
+                pb.push(x);
+                pb.to_str().unwrap().to_string()
+            })
+            .collect();
+        expected.sort();
+
+        let results: Vec<Result<String>> = DirIterator::new(temp.path_str()).unwrap().collect();
+        debug_assert!(results.iter().all(|x| x.is_ok()));
+
+        let mut paths: Vec<String> = results.into_iter().map(Result::unwrap).collect();
+        paths.sort();
+
+        debug_assert_eq!(paths.len(), expected.len());
+        for (a, b) in paths.iter().zip(expected.iter()) {
+            assert_eq!(a, b);
+        }
+    }
+
+    #[test]
+    pub fn test_empty_middle_dir() {
+        let mut temp = TestDir::new();
+        let temp = temp
+            .file("1", "xabcyabcz")
+            .subdir("a", |a| {
+                a.file("2", "abc")
+                    .subdir("aa", |aa| {
+                        aa.subdir("aaa", |aaa| {
+                            aaa.file("3", "abc");
+                        });
+                    });
+            });
+
+        let expected = vec![
+            "1",
+            "a/2",
+            "a/aa/aaa/3"
+        ];
+
+        test_dirs(temp, expected);
+    }
+
+    #[test]
+    pub fn test_comprehensive() {
+        let mut temp = TestDir::new();
+        let temp = temp
+            .file("1", "xabcyabcz")
+            .file("2", "abc")
+            .file("3", "")
+            .file("4", "ab c")
+            .subdir("a", |a| {
+                a.file("5", "abc")
+                 .file("6", "")
+                 .subdir("aa", |aa| {
+                     aa.subdir("aaa", |aaa| {
+                         aaa.file("7", "abc");
+                     });
+                 });
+            })
+            .subdir("b", |_| {})
+            .subdir("c", |c| {
+                c.file("8", "abc");
+            });
+
+        let expected = vec![
+            "1",
+            "2",
+            "3",
+            "4",
+            "a/5",
+            "a/6",
+            "a/aa/aaa/7",
+            "c/8"
+        ];
+
+        test_dirs(temp, expected);
     }
 }

@@ -4,6 +4,7 @@ mod file;
 mod input;
 mod iter;
 mod replace;
+mod testdir;
 
 use input::{ArgsError, FarMode, parse_cmdline};
 use far::find_and_replace;

@@ -53,3 +53,22 @@ pub fn find_and_replace<S: AsRef<str>, I: IntoIterator<Item=S>>(dirs: I, pattern
     iter.par_bridge()
         .for_each(|r| handle_result(r, pattern, replacement, mode));
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testdir::testdir::{TestFile};
+    use std::fs::read_to_string;
+
+    #[test]
+    pub fn test_handle_result_basic() {
+        let file = TestFile::new("abc def abc");
+        let re = fancy_regex::Regex::new("abc").unwrap();
+
+        handle_result(Ok(file.path_str()), &re, "def", FarMode::All);
+
+        let new_contents = read_to_string(&file.path_str()).unwrap();
+
+        debug_assert_eq!(new_contents, "def def def");
+    }
+}

@@ -139,3 +139,33 @@ pub fn replace_lines_in_file(
     conv_result(replace_file(&tmp.filename, filename))?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    pub fn _test_replace_string(regex: &str, input: &str, replacement: &str, expected: &str) {
+        let re = fancy_regex::Regex::new(regex).expect(&format!("Invalid regex {}", regex));
+        let result = replace_string(input, &re, replacement);
+
+        debug_assert_eq!(result, expected);
+    }
+
+    #[test]
+    pub fn test_replace_string() {
+        let cases = vec![
+            ("abc", "xabcyabcz", "def", "xdefydefz"),
+            ("abc", "abc", "", ""),
+            ("abc", "ab", "not_used", "ab"),
+            ("abc", "", "not_used", ""),
+            ("\\s+", "test word", "XXX", "testXXXword"),
+            ("(\\w+) (\\1)", "foo foo baz bar bar", "thing", "thing baz thing"),
+            ("(?P<first>\\w+) (?P<last>\\w+)", "John Doe", "$last, $first", "Doe, John"),
+            ("(\\w+) (\\w+)", "John Doe", "$2, $1", "Doe, John")
+        ];
+
+        for (regex, input, replacement, expected) in cases {
+            _test_replace_string(regex, input, replacement, expected);
+        }
+    }
+}
