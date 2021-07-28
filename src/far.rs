@@ -1,6 +1,6 @@
 use crate::FarMode;
 use fancy_regex::Regex;
-use crate::dir_iter::{DirIterator, DirIteratorError};
+use crate::iter::dir_iter::{DirIterator, DirIteratorError};
 use crate::iter::concat::Concat;
 use crate::replace::{replace_all_in_file, replace_lines_in_file, ReplaceError};
 

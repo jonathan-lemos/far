@@ -1,13 +1,12 @@
-mod dir_iter;
+use far::find_and_replace;
+use input::{ArgsError, FarMode, parse_cmdline};
+
 mod far;
 mod file;
 mod input;
 mod iter;
 mod replace;
 mod testdir;
-
-use input::{ArgsError, FarMode, parse_cmdline};
-use far::find_and_replace;
 
 fn handle_argserror(e: ArgsError) {
     eprintln!("Failed to parse command-line arguments: {}", e)
