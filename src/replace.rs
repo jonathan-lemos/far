@@ -1,4 +1,5 @@
 use crate::file::*;
+use crate::iter::intersperse::Intersperse;
 use ascii_utils::Check;
 use fancy_regex::Regex;
 use std::fmt::Display;
@@ -133,7 +134,8 @@ pub fn replace_lines_in_file(
 
     let mut tmp = conv_result(TempFile::new(filename, ".new"))?;
 
-    let new_contents = lines.map(|r| r.map(|l| replace_string(&l, pattern, replacement)));
+    let new_lines = lines.map(|r| r.map(|l| replace_string(&l, pattern, replacement)));
+    let new_contents = Intersperse::new(new_lines, || Ok("\n".to_string()));
     conv_result(write_to_file(&mut tmp.file, new_contents))?;
 
     conv_result(replace_file(&tmp.filename, filename))?;

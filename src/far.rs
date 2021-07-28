@@ -1,7 +1,7 @@
 use crate::FarMode;
 use fancy_regex::Regex;
 use crate::dir_iter::{DirIterator, DirIteratorError};
-use crate::iter::Concat;
+use crate::iter::concat::Concat;
 use crate::replace::{replace_all_in_file, replace_lines_in_file, ReplaceError};
 
 use rayon::prelude::*;
@@ -70,5 +70,29 @@ mod tests {
         let new_contents = read_to_string(&file.path_str()).unwrap();
 
         debug_assert_eq!(new_contents, "def def def");
+    }
+
+    #[test]
+    pub fn test_handle_result_traverses_lines_in_multiline_mode() {
+        let file = TestFile::new("abc ab\nc abc");
+        let re = fancy_regex::Regex::new("[^ ]+").unwrap();
+
+        handle_result(Ok(file.path_str()), &re, "def", FarMode::All);
+
+        let new_contents = read_to_string(&file.path_str()).unwrap();
+
+        debug_assert_eq!(new_contents, "def def def");
+    }
+
+    #[test]
+    pub fn test_handle_result_doesnt_traverse_lines_in_singleline_mode() {
+        let file = TestFile::new("abc ab\nc abc");
+        let re = fancy_regex::Regex::new("[^ ]+").unwrap();
+
+        handle_result(Ok(file.path_str()), &re, "def", FarMode::Lines);
+
+        let new_contents = read_to_string(&file.path_str()).unwrap();
+
+        debug_assert_eq!(new_contents, "def def\ndef def");
     }
 }
